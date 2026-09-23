@@ -1,6 +1,6 @@
 # Mini Arcade
 
-Eine kleine, zweisprachige Spielesammlung mit Sudoku und Minesweeper. Die erste Version läuft vollständig im Browser: Sie braucht weder Konto noch Server und speichert Partien und Bestzeiten lokal.
+Eine kleine, zweisprachige Spielesammlung mit Sudoku, Minesweeper, Nonogram und Snake. Sie läuft vollständig im Browser: Sie braucht weder Konto noch Server und speichert Partien und Siege lokal.
 
 ## Starten unter Windows
 
@@ -34,9 +34,12 @@ Beim Pages-Build setzt der Workflow `GITHUB_PAGES_BASE` auf `/<repository-name>/
 
 ## Was die App kann
 
-- Sudoku: 9×9, drei Schwierigkeitsgrade, lokal erzeugte Rätsel mit eindeutiger Lösung, Notizen, Rückgängig, Pause und Hinweise. Drei falsche Eingaben beenden das Spiel. Hinweise trennen die Bestzeit in „mit Hilfe“ und „ohne Hilfe“.
+- Sudoku: 9×9, drei Schwierigkeitsgrade, lokal erzeugte Rätsel mit eindeutiger Lösung, Notizen, Rückgängig, Pause und Hinweise. Drei falsche Eingaben beenden das Spiel. Siege werden pro Schwierigkeit gezählt, auch wenn ein Hinweis genutzt wurde.
 - Minesweeper: 9×9/10, 16×16/40 und 30×16/99. Der erste Aufdeckzug samt Nachbarn ist sicher. Flaggen funktionieren per Rechtsklick, Tastatur oder sichtbarem Touch-Schalter. Erneutes Aktivieren eines Zahlenfelds deckt Nachbarn auf, wenn die Zahl der Flaggen passt.
+- Nonogram: 5×5, 10×10 und 15×15. Die Zahlen zeigen Gruppen gefüllter Felder je Zeile und Spalte. Sechs handgestaltete Motive pro Größe erscheinen der Reihe nach; danach folgen automatisch erzeugte, logisch lösbare Rätsel. Füllen und X setzen funktioniert per Moduswahl, Tastatur und Rechtsklick. Drei falsche Markierungen beenden den Versuch; ein Hinweis und Rückgängig helfen beim Lösen.
+- Snake: 20×20 Felder, Äpfel, Wand- und Selbstkollision. Die Schlange wird alle vier Äpfel schneller und die Punkte pro Apfel steigen mit dem Tempo. Pfeiltasten, WASD, Wischen und Bildschirmtasten steuern sie. Tabwechsel pausiert; nach Neuladen bleibt nur der Rekord.
 - Deutsch und Englisch, helles und dunkles Design sowie eine Systemoption. Die Auswahl und je ein angefangener Spielstand pro Spiel bleiben im Browser erhalten.
+- Die Startseite zeigt keine Ergebnisse. Auf den Spielseiten stehen die Siege pro Schwierigkeitsgrad beziehungsweise Feldgröße; Snake zeigt dort seinen Punkterekord. Bestzeiten werden nicht gespeichert.
 - Tastatursteuerung: Pfeile bewegen den Fokus im Brett. In Sudoku geben 1–9 Zahlen ein und Entf/Backspace löscht. In Minesweeper aktiviert Enter/Leertaste den gewählten Modus und `F` setzt oder entfernt eine Flagge.
 
 ## Mini-Tutorial: Wie das Projekt aufgebaut ist
@@ -51,15 +54,17 @@ TypeScript ergänzt JavaScript um Typen. Ein Typ wie `SudokuGame` beschreibt gen
 
 ### 2. Spielregeln getrennt von der Oberfläche
 
-`src/games/sudoku.ts` und `src/games/minesweeper.ts` enthalten die Regeln als Funktionen. Beispiel: `revealMine(game, index)` erhält einen Spielzustand und liefert den nächsten. Die Funktion weiß nichts über Knöpfe, Farben oder React. Dadurch lässt sich dieselbe Regel mit kleinen Eingaben automatisch prüfen.
+Die Dateien unter `src/games/` enthalten die Regeln als Funktionen. Beispiel: `revealMine(game, index)` erhält einen Spielzustand und liefert den nächsten. Die Funktion weiß nichts über Knöpfe, Farben oder React. Dadurch lässt sich dieselbe Regel mit kleinen Eingaben automatisch prüfen.
 
 Sudoku baut zunächst ein vollständiges gültiges Brett, entfernt Zahlen unter Wahrung genau einer Lösung und stuft das Ergebnis anhand eines regelbasierten Lösers ein. „Einfach“ ist mit wenigen direkten oder versteckten Einzelkandidaten lösbar. „Mittel“ benötigt mehr versteckte Einzelkandidaten oder zusätzliche Kandidatenausschlüsse wie gesperrte Kandidaten und Paare. „Schwer“ benötigt darüber hinaus weitere Schlussfolgerungen. Die Erzeugung läuft in `sudoku.worker.ts` in einem Web Worker, also einem getrennten Browser-Thread, damit die Oberfläche ansprechbar bleibt. Falls die Erzeugung nicht gelingt, gibt es geprüfte lokale Ersatzrätsel.
 
 Minesweeper legt die Minen erst beim ersten Aufdecken. So kann dieses Feld samt Nachbarn zuverlässig minenfrei bleiben. Ein Feld mit `nearby === 0` öffnet über eine Warteschlange seine sicheren Nachbarn. Als Sieg zählt das Aufdecken aller Felder ohne Mine; Flaggen sind eine Hilfe, aber keine Siegpflicht.
 
+Nonogram erzeugt die Randzahlen aus dem fertigen Bild. Der Solver prüft, welche Felder in allen noch möglichen Zeilen- und Spaltenmustern übereinstimmen. Ist auf diese Weise das ganze Raster bestimmbar, braucht das Rätsel kein Raten und besitzt nur eine Lösung. Zufallsrätsel entstehen in einem Web Worker, damit die Seite dabei bedienbar bleibt. Snake besitzt eine reine `stepSnake`-Funktion: Ein Aufruf bewegt die Schlange exakt ein Feld und prüft Apfel, Wand und eigenen Körper. Die Oberfläche ruft sie in einem festgelegten Takt auf.
+
 ### 3. Zustand, Speicherung und Sprache
 
-`src/store.ts` beschreibt die gespeicherten Daten. `localStorage` ist ein kleiner Speicher des Browsers für diese Website. Er ist weder Cloud-Speicher noch über Geräte hinweg synchron. Im privaten Browserfenster oder nach dem Löschen von Websitedaten kann er verschwinden. Beim Laden werden Daten geprüft; ungültige Einträge werden verworfen. Wenn Speichern blockiert ist, kann weitergespielt werden, aber nach einem Neuladen ist der Fortschritt möglicherweise weg.
+`src/store.ts` beschreibt die gespeicherten Daten. `localStorage` ist ein kleiner Speicher des Browsers für diese Website. Er ist weder Cloud-Speicher noch über Geräte hinweg synchron. Im privaten Browserfenster oder nach dem Löschen von Websitedaten kann er verschwinden. Beim Laden werden Daten geprüft; ungültige Einträge werden verworfen. Daten der ersten Version werden übernommen, ohne den alten Eintrag zu löschen. Wenn Speichern blockiert ist, kann weitergespielt werden, aber nach einem Neuladen ist der Fortschritt möglicherweise weg.
 
 `src/i18n.ts` hält die deutschen und englischen Texte. Die Funktion `t('newGame')` liefert den Text in der gewählten Sprache. Auch das HTML-Attribut `lang` wird umgestellt, damit Hilfstechnologien die richtige Sprache erkennen. Farben folgen standardmäßig dem Betriebssystem; eine eigene Auswahl überschreibt das.
 

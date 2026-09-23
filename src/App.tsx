@@ -9,7 +9,15 @@ import {
 } from "react";
 import { Link, NavLink, Route, Routes, useLocation } from "react-router";
 import { translate, type TextKey } from "./i18n";
-import { addWin, readStore, writeStore, type Store, type Theme } from "./store";
+import { NonogramPage, SnakePage } from "./ExtraGames";
+import {
+  addWin,
+  readStore,
+  winsFor,
+  writeStore,
+  type Store,
+  type Theme,
+} from "./store";
 import {
   adjacentMineCount,
   chordMine,
@@ -151,13 +159,15 @@ function Header() {
         </Link>
         <nav
           aria-label={t("mainNavigation")}
-          className="order-3 flex w-full gap-1 sm:order-2 sm:w-auto"
+          className="order-3 flex w-full flex-wrap gap-1 sm:order-2 sm:w-auto"
         >
           {(
             [
               ["/", "home"],
               ["/sudoku", "sudoku"],
               ["/minesweeper", "minesweeper"],
+              ["/nonogram", "nonogram"],
+              ["/snake", "snake"],
             ] as const
           ).map(([path, label]) => (
             <NavLink
@@ -215,20 +225,13 @@ function Header() {
           ? t("home")
           : location.pathname === "/sudoku"
             ? t("sudoku")
-            : t("minesweeper")}
+            : location.pathname === "/minesweeper"
+              ? t("minesweeper")
+              : location.pathname === "/nonogram"
+                ? t("nonogram")
+                : t("snake")}
       </span>
     </header>
-  );
-}
-
-function ScoreLine({ scoreKey }: { scoreKey: string }) {
-  const { store, t } = useArcade();
-  const score = store.scores[scoreKey];
-  return (
-    <span className="text-sm text-[var(--muted)]">
-      {t("wins")}: {score?.wins ?? 0} · {t("best")}:{" "}
-      {score?.best != null ? formatTime(score.best) : "—"}
-    </span>
   );
 }
 
@@ -261,7 +264,7 @@ function Home() {
       </section>
       <section className="mt-12" aria-labelledby="games-heading">
         <div className="mb-5">
-          <span className="eyebrow">01 / 02</span>
+          <span className="eyebrow">01 / 04</span>
           <h2
             id="games-heading"
             className="mt-2 text-3xl font-bold tracking-tight"
@@ -289,9 +292,6 @@ function Home() {
                 <span className="pill">01</span>
               </div>
               <p className="mt-2 text-[var(--muted)]">{t("sudokuCard")}</p>
-              <div className="mt-4">
-                <ScoreLine scoreKey="sudoku:easy:regular" />
-              </div>
               <Link to="/sudoku" className="card-link mt-6">
                 {canContinueSudoku(store.sudoku) ? t("continue") : t("playNow")}{" "}
                 <span aria-hidden="true">↗</span>
@@ -321,14 +321,61 @@ function Home() {
                 <span className="pill">02</span>
               </div>
               <p className="mt-2 text-[var(--muted)]">{t("mineCard")}</p>
-              <div className="mt-4">
-                <ScoreLine scoreKey="minesweeper:beginner" />
-              </div>
               <Link to="/minesweeper" className="card-link mt-6">
                 {canContinueMinesweeper(store.minesweeper)
                   ? t("continue")
                   : t("playNow")}{" "}
                 <span aria-hidden="true">↗</span>
+              </Link>
+            </div>
+          </article>
+          <article className="game-card">
+            <div className="card-visual ng-visual" aria-hidden="true">
+              <span>1</span>
+              <span>3</span>
+              <span>1</span>
+              <span>■</span>
+              <span>■</span>
+              <span>■</span>
+              <span>×</span>
+              <span>■</span>
+              <span>×</span>
+            </div>
+            <div className="p-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-2xl font-bold">Nonogram</h3>
+                <span className="pill">03</span>
+              </div>
+              <p className="mt-2 text-[var(--muted)]">{t("nonogramCard")}</p>
+              <Link to="/nonogram" className="card-link mt-6">
+                {store.nonogram?.marks.some(Boolean) &&
+                ["playing", "paused"].includes(store.nonogram.status)
+                  ? t("continue")
+                  : t("playNow")}{" "}
+                <span aria-hidden="true">↗</span>
+              </Link>
+            </div>
+          </article>
+          <article className="game-card">
+            <div className="card-visual snake-visual" aria-hidden="true">
+              <span>●</span>
+              <span>●</span>
+              <span>●</span>
+              <span>●</span>
+              <span>●</span>
+              <span>●</span>
+              <span>●</span>
+              <span>●</span>
+              <span>◆</span>
+            </div>
+            <div className="p-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-2xl font-bold">Snake</h3>
+                <span className="pill">04</span>
+              </div>
+              <p className="mt-2 text-[var(--muted)]">{t("snakeCard")}</p>
+              <Link to="/snake" className="card-link mt-6">
+                {t("playNow")} <span aria-hidden="true">↗</span>
               </Link>
             </div>
           </article>
@@ -479,7 +526,6 @@ function SudokuPage() {
           ? addWin(
               current.scores,
               `sudoku:${next.level}:${next.hints ? "assisted" : "regular"}`,
-              next.elapsed,
             )
           : current.scores;
       return { ...current, sudoku: next, scores };
@@ -547,6 +593,8 @@ function SudokuPage() {
                 >
                   {game.values.map((value, index) => {
                     const wrong = !!value && value !== game.solution[index];
+                    const sameValue =
+                      !!value && value === game.values[selected];
                     const related =
                       Math.floor(index / 9) === Math.floor(selected / 9) ||
                       index % 9 === selected % 9 ||
@@ -565,7 +613,7 @@ function SudokuPage() {
                         disabled={game.status === "paused"}
                         aria-label={`${t("row")} ${Math.floor(index / 9) + 1}, ${t("column")} ${(index % 9) + 1}: ${value || t("empty")}${wrong ? `, ${t("error")}` : ""}`}
                         aria-selected={selected === index}
-                        className={`sudoku-cell ${game.puzzle[index] ? "given" : ""} ${selected === index ? "selected" : related ? "related" : ""} ${wrong ? "wrong" : ""} ${index % 3 === 2 && index % 9 !== 8 ? "box-right" : ""} ${Math.floor(index / 9) % 3 === 2 && index < 72 ? "box-bottom" : ""}`}
+                        className={`sudoku-cell ${game.puzzle[index] ? "given" : ""} ${selected === index ? "selected" : related ? "related" : ""} ${sameValue ? "same-value" : ""} ${wrong ? "wrong" : ""} ${index % 3 === 2 && index % 9 !== 8 ? "box-right" : ""} ${Math.floor(index / 9) % 3 === 2 && index < 72 ? "box-bottom" : ""}`}
                         onFocus={() => setSelected(index)}
                         onClick={() => setSelected(index)}
                         onKeyDown={(event) => keyDown(event, index)}
@@ -626,7 +674,10 @@ function SudokuPage() {
                 <button
                   className="button-secondary"
                   aria-pressed={pencil}
-                  onClick={() => setPencil(!pencil)}
+                  onClick={() => {
+                    setPencil((current) => !current);
+                    cells.current[selected]?.focus();
+                  }}
                 >
                   {t("notes")} {pencil ? "●" : "○"}
                 </button>
@@ -729,14 +780,8 @@ function SudokuPage() {
           {(["easy", "medium", "hard"] as const).map((level) => (
             <div key={level} className="score-item">
               <strong>{t(level)}</strong>
-              <ScoreLine scoreKey={`sudoku:${level}:regular`} />
-              <span className="text-xs text-[var(--muted)]">
-                {t("assisted")}:{" "}
-                {store.scores[`sudoku:${level}:assisted`]?.wins ?? 0} ·{" "}
-                {t("best")}:{" "}
-                {store.scores[`sudoku:${level}:assisted`]?.best != null
-                  ? formatTime(store.scores[`sudoku:${level}:assisted`].best!)
-                  : "—"}
+              <span className="text-sm text-[var(--muted)]">
+                {t("wins")}: {winsFor(store.scores, `sudoku:${level}`)}
               </span>
             </div>
           ))}
@@ -796,7 +841,7 @@ function MinesweeperPage() {
       if (next === previous) return current;
       const scores =
         next.status === "won" && previous.status !== "won"
-          ? addWin(current.scores, `minesweeper:${next.level}`, next.elapsed)
+          ? addWin(current.scores, `minesweeper:${next.level}`)
           : current.scores;
       return { ...current, minesweeper: next, scores };
     });
@@ -979,7 +1024,9 @@ function MinesweeperPage() {
           {(["beginner", "intermediate", "expert"] as const).map((level) => (
             <div key={level} className="score-item">
               <strong>{t(level)}</strong>
-              <ScoreLine scoreKey={`minesweeper:${level}`} />
+              <span className="text-sm text-[var(--muted)]">
+                {t("wins")}: {winsFor(store.scores, `minesweeper:${level}`)}
+              </span>
             </div>
           ))}
         </aside>
@@ -1052,6 +1099,14 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/sudoku" element={<SudokuPage />} />
             <Route path="/minesweeper" element={<MinesweeperPage />} />
+            <Route
+              path="/nonogram"
+              element={<NonogramPage store={store} setStore={setStore} t={t} />}
+            />
+            <Route
+              path="/snake"
+              element={<SnakePage store={store} setStore={setStore} t={t} />}
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>

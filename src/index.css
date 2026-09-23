@@ -264,6 +264,196 @@ a {
   background: #e8a87d;
   color: #523620;
 }
+.ng-visual {
+  background: #e9e3f2;
+}
+.ng-visual span {
+  background: #fff;
+  color: #68578f;
+}
+.ng-visual span:nth-child(4),
+.ng-visual span:nth-child(5),
+.ng-visual span:nth-child(6),
+.ng-visual span:nth-child(8) {
+  background: #68578f;
+  color: #fff;
+}
+.snake-visual {
+  background: #e1eee3;
+}
+.snake-visual span {
+  background: #f8fff6;
+  color: #2f795a;
+}
+.snake-visual span:nth-child(9) {
+  background: #f6c8a8;
+  color: #9e5133;
+}
+.ng-viewport {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  overflow: auto;
+}
+.ng-board {
+  display: grid;
+  width: 100%;
+  gap: 2px;
+}
+.ng-board[data-zoom="true"] {
+  width: max-content;
+}
+.ng-clue {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: clamp(9px, 1.6vw, 13px);
+  font-weight: 750;
+}
+.ng-clue-row {
+  justify-content: flex-end;
+  padding-right: 5px;
+  white-space: nowrap;
+}
+.ng-clue-column {
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 70px;
+}
+.ng-cell {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface-alt);
+  color: var(--text);
+  font-weight: 850;
+}
+.ng-cell.ng-mark-1 {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.ng-cell.ng-mark-2 {
+  background: var(--surface);
+  color: #b36451;
+}
+.ng-cell.ng-wrong {
+  box-shadow: inset 0 0 0 2px #c9594d;
+  background: #f8d7d0;
+  color: #70362e;
+}
+.ng-paused {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 800;
+}
+.snake-board {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(20, minmax(0, 1fr));
+  grid-template-rows: repeat(20, minmax(0, 1fr));
+  width: min(100%, 560px);
+  aspect-ratio: 1;
+  margin-inline: auto;
+  overflow: hidden;
+  border: 2px solid var(--accent);
+  border-radius: 13px;
+  background: var(--surface-alt);
+  touch-action: none;
+}
+.snake-board:focus-visible {
+  outline: none;
+}
+.snake-cell {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid color-mix(in srgb, var(--line) 50%, transparent);
+  pointer-events: none;
+}
+.snake-segment {
+  border-color: transparent;
+}
+.snake-body-art {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.snake-food {
+  overflow: visible;
+}
+.snake-food::before {
+  content: "";
+  position: absolute;
+  inset: 18% 16% 15%;
+  border: 1.5px solid #672c30;
+  border-radius: 48% 48% 46% 46% / 37% 37% 58% 58%;
+  background:
+    radial-gradient(ellipse at 50% -3%, var(--surface-alt) 0 12%, transparent 13%),
+    radial-gradient(circle at 34% 36%, #ffd779 0 5%, transparent 6%),
+    linear-gradient(145deg, #ff7262, #ef414a 70%, #d92f43);
+  box-shadow: 0 1px 0 #672c3050;
+}
+.snake-food::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  width: 31%;
+  height: 23%;
+  left: 53%;
+  top: 9%;
+  border: 1px solid #285c36;
+  border-radius: 100% 0 100% 0;
+  background: #83ce4d;
+  transform: rotate(-24deg);
+  transform-origin: bottom left;
+}
+.snake-overlay {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  font-size: 25px;
+}
+.snake-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 48px);
+  gap: 5px;
+  justify-content: center;
+  margin-top: 16px;
+}
+.snake-pad button:first-child {
+  grid-column: 2;
+}
+.snake-pad button:nth-child(2) {
+  grid-column: 1;
+}
+.snake-pad button:nth-child(3) {
+  grid-column: 2;
+}
+.snake-pad button:nth-child(4) {
+  grid-column: 3;
+}
 .pill {
   padding: 5px 9px;
   border-radius: 20px;
@@ -276,13 +466,35 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-top: 1px solid var(--line);
-  padding-top: 17px;
-  font-weight: 750;
-  color: var(--accent);
+  min-height: 58px;
+  gap: 12px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: 11px 13px 11px 21px;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 16px;
+  font-weight: 800;
+  box-shadow: 0 8px 18px #203d2720;
+  transition:
+    background 0.16s,
+    transform 0.16s,
+    box-shadow 0.16s;
+}
+.card-link span {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 50%;
+  background: #ffffff24;
+  font-size: 19px;
 }
 .card-link:hover {
-  text-decoration: underline;
+  background: var(--accent-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 22px #203d2730;
 }
 .back-link {
   color: var(--accent);
@@ -369,9 +581,17 @@ a {
 .sudoku-cell.related {
   background: var(--surface-alt);
 }
+.sudoku-cell.same-value {
+  background: color-mix(in srgb, var(--warm) 34%, var(--surface));
+  box-shadow: inset 0 0 0 2px var(--warm);
+}
 .sudoku-cell.selected {
   background: var(--accent-soft);
   box-shadow: inset 0 0 0 2px var(--accent);
+}
+.sudoku-cell:focus-visible {
+  /* The selected-cell ring already shows focus without an extra orange outline. */
+  outline: none;
 }
 .sudoku-cell.wrong {
   color: #b93f44;
@@ -533,8 +753,10 @@ a {
   place-items: center;
   width: 100%;
   min-width: 0;
+  min-height: 0;
   aspect-ratio: 1;
   padding: 0;
+  overflow: hidden;
   border-radius: 3px;
   background: var(--surface-alt);
   font-size: clamp(9px, 2.3cqw, 20px);

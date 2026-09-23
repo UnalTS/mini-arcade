@@ -58,9 +58,17 @@ Ein Beispiel für einen Test: Erzeuge ein Rätsel, rufe `countSolutions` auf und
 
 **Übung:** Lies in `minesweeper.test.ts` den Test des ersten Zuges. Ändere gedanklich die Testdaten auf ein mittleres Feld: Welche Indizes müssten dann garantiert minenfrei sein?
 
+### Nonogram und Snake
+
+Ein Nonogram-Bild ist ein Raster aus gefüllten und leeren Feldern. `runs` zählt die Länge jeder zusammenhängenden Gruppe und erzeugt daraus die Hinweise am Rand. `solveByLogic` betrachtet für jede Zeile und Spalte alle Muster, die zu ihren Hinweisen passen. Ein Feld wird nur dann festgelegt, wenn alle verbleibenden Muster dort übereinstimmen. Kann diese Wiederholung das ganze Raster bestimmen, ist das Rätsel ohne Raten lösbar. Die zufällige Erzeugung läuft in `nonogram.worker.ts`; die 18 handgestalteten Bilder stehen in `nonogram.ts`. Die Spielseite liegt in `ExtraGames.tsx`.
+
+Bei Snake ist ein Feld einfach eine Zahl von 0 bis 399. `stepSnake` berechnet aus dem bisherigen Körper und der Richtung den nächsten Zustand. Sie prüft zuerst die Wand, dann den Körper, dann den Apfel. Beim normalen Schritt verschwindet das letzte Körperglied; nach einem Apfel bleibt es stehen und die Schlange wächst. Das Tempo hängt von der Zahl gefressener Äpfel ab, nicht von der Bildwiederholrate des Monitors.
+
+**Übung:** Suche `snakeInterval(4)` und `snakeStage(4)` in den Tests. Erkläre, warum beide nach dem vierten Apfel einen höheren Schwierigkeitsgrad beschreiben.
+
 ## 5. Wie bleiben Spiele nach dem Neuladen erhalten?
 
-`src/store.ts` schreibt den Zustand als JSON in `localStorage`. JSON ist eine Textdarstellung von Objekten und Arrays. Beim nächsten Laden wird der Text wieder in Daten umgewandelt und geprüft. Die `version: 1` hilft bei späteren Änderungen am Datenformat: Unbekannte Formate werden nicht blind übernommen.
+`src/store.ts` schreibt den Zustand als JSON in `localStorage`. JSON ist eine Textdarstellung von Objekten und Arrays. Beim nächsten Laden wird der Text wieder in Daten umgewandelt und geprüft. Version 2 ergänzt Nonogram und den Snake-Rekord. Falls nur Version 1 vorhanden ist, werden Sudoku, Minesweeper, Sprache, Design und frühere Siege übernommen. Alte Bestzeiten werden verworfen; der alte Eintrag bleibt zur Sicherheit bestehen.
 
 Die Daten sind an Browser und Website-Adresse gebunden. Derselbe Spielstand erscheint nicht automatisch auf einem anderen Gerät. Private Fenster löschen diese Daten normalerweise beim Schließen. Falls der Browser Speichern blockiert, zeigt Mini Arcade eine Warnung, lässt die laufende Partie aber zu.
 
@@ -74,16 +82,18 @@ Das Design nutzt Tailwind-Klassen für übliche Abstände und Layouts. Wiederkeh
 
 Die Bretter besitzen beschriftete Felder und Tastaturbefehle. Das Profi-Feld passt sich der verfügbaren Breite an, sodass alle 30 Spalten gleichzeitig sichtbar sind. Auf schmalen Smartphones werden die Felder dadurch sehr klein; Querformat oder ein größerer Bildschirm machen längere Profi-Partien leichter bedienbar.
 
+Bei Nonogram ist auch das 15×15-Raster zunächst ganz sichtbar. Die freiwillige Vergrößerung lässt größere Felder innerhalb des Spielbereichs verschieben, ohne die gesamte Seite horizontal zu scrollen. Snake lässt sich mit Tastatur, Wischgeste oder sichtbaren Pfeilknöpfen steuern. Ein Tabwechsel pausiert eine offene Runde.
+
 ## 7. Welche Tests gibt es?
 
-`npm.cmd test` startet Vitest. Diese Tests führen die Spielregeln direkt aus und sind schnell. Sie prüfen unter anderem mehrere zufällig erzeugte Sudoku-Rätsel, den dritten Fehler, Hinweise, sichere erste Züge und Minesweeper-Chord.
+`npm.cmd test` startet Vitest. Diese Tests führen die Spielregeln direkt aus und sind schnell. Sie prüfen unter anderem Sudoku-Erzeugung, sichere Minesweeper-Züge, alle 18 Nonogram-Motive, erzeugte Rätsel sowie Bewegung, Tempo und Kollisionen bei Snake.
 
-`npm.cmd run test:e2e` startet Playwright. Es öffnet die echte Seite in einem Chromium-Testbrowser, einmal in Desktop- und einmal in Mobilgröße. Diese Tests prüfen Navigation, Sprache, gespeicherten Zustand, Flaggenmodus, Bestätigungsdialog und ob das Profi-Feld vollständig in die Spielkarte passt. Vor dem ersten Lauf muss mit `npm.cmd exec playwright install chromium` der Testbrowser installiert werden.
+`npm.cmd run test:e2e` startet Playwright. Es öffnet die echte Seite in einem Chromium-Testbrowser, einmal in Desktop- und einmal in Mobilgröße. Diese Tests prüfen Navigation, Sprache, gespeicherten Zustand, Nonogram-Eingaben und Zoom, Snake-Start und Pause sowie die bisherigen Spielfunktionen. Vor dem ersten Lauf muss mit `npm.cmd exec playwright install chromium` der Testbrowser installiert werden.
 
 `npm.cmd run build` ist eine weitere Prüfung: TypeScript lehnt unpassende Typen ab, danach erzeugt Vite die Produktionsdateien. `npm.cmd run lint` sucht verdächtige Codemuster.
 
 **Übung:** Ändere in einem Test vorübergehend eine Erwartung von `toBe('won')` zu `toBe('lost')`. Führe `npm.cmd test` aus und lies, was der Fehlerbericht über erwarteten und tatsächlichen Wert sagt. Verwirf die Änderung danach.
 
-## 8. Ein drittes Spiel ergänzen
+## 8. Ein weiteres Spiel ergänzen
 
 Für ein weiteres Spiel beschreibst du zuerst seinen Zustand und seine Regeln in einer neuen Datei unter `src/games/`. Danach ergänzt du die Speicherung in `store.ts`, die sichtbare Spielseite und eine Route in `App.tsx`, die Texte in `i18n.ts` sowie Tests für wichtige Regeln und Bedienwege. Beginne mit einem kleinsten spielbaren Durchgang. Zusätzliche Statistiken und Feinschliff folgen, sobald die Grundregeln stimmen.
